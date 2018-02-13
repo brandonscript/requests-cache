@@ -6,13 +6,20 @@
 
     Dictionary-like objects for saving large data sets to `sqlite` database
 """
+from sys import version_info
 from collections import MutableMapping
 import sqlite3 as sqlite
 from contextlib import contextmanager
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+if version_info[0] < 3:
+    try:
+        import threading
+    except ImportError:
+        import dummy_threading as threading
+else:
+    try:
+        import _thread as threading
+    except ImportError:
+        import _dummy_thread as threading
 try:
     import cPickle as pickle
 except ImportError:
@@ -108,9 +115,8 @@ class DbDict(MutableMapping):
         finally:
             self._bulk_commit = False
             self.can_commit = True
-            if self._pending_connection is not None:
-                self._pending_connection.close()
-                self._pending_connection = None
+            self._pending_connection.close()
+            self._pending_connection = None
 
     def __getitem__(self, key):
         with self.connection() as con:
